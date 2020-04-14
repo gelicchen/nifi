@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -132,9 +133,15 @@ public class RunNiFi {
     private final File bootstrapConfigFile;
 
     // used for logging initial info; these will be logged to console by default when the app is started
-    private final Logger cmdLogger = LoggerFactory.getLogger("org.apache.nifi.bootstrap.Command");
+    private static final Logger cmdLogger;
     // used for logging all info. These by default will be written to the log file
-    private final Logger defaultLogger = LoggerFactory.getLogger(RunNiFi.class);
+    private static final Logger defaultLogger;
+
+    static {
+        appendtoClassPath("D:\\tool\\nifi-diy\\lib");
+        cmdLogger = LoggerFactory.getLogger("org.apache.nifi.bootstrap.Command");
+        defaultLogger = LoggerFactory.getLogger(RunNiFi.class);
+    }
 
 
     private final ExecutorService loggingExecutor;
@@ -178,6 +185,42 @@ public class RunNiFi {
     private static String[] shift(final String[] orig) {
         return Arrays.copyOfRange(orig, 1, orig.length);
     }
+
+
+
+    private static boolean appendtoClassPath(String name) {
+        try {
+            File file = new File(name);
+            if (file.exists() && file.isDirectory()) {
+                String[] subFiles = file.list((dir, name1) -> name1.endsWith(".jar"));
+                Arrays.asList(subFiles).forEach(name1 -> appendtoClassPath(Paths.get(file.getAbsolutePath(),
+                        name1).toString()));
+            }
+
+            ClassLoader clsLoader = ClassLoader.getSystemClassLoader();
+            Method appendToClassPathMethod = clsLoader.getClass()
+                    .getDeclaredMethod(
+                            "appendToClassPathForInstrumentation",
+                            String.class);
+            if (null != appendToClassPathMethod) {
+                appendToClassPathMethod.setAccessible(true);
+                appendToClassPathMethod.invoke(clsLoader, name);
+            }
+            return true;
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 1 || args.length > 3) {

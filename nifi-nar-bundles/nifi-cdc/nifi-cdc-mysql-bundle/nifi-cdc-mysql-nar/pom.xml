@@ -20,6 +20,7 @@
         <version>1.11.5-SNAPSHOT</version>
     </parent>
     <artifactId>nifi-cdc-mysql-nar</artifactId>
+    <version>1.11.5-SNAPSHOT-${build_no}</version>
     <packaging>nar</packaging>
     <description>NiFi MySQL Change Data Capture (CDC) NAR</description>
     <properties>

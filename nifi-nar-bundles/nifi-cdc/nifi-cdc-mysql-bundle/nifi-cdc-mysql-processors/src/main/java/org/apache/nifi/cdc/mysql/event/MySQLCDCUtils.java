@@ -17,6 +17,12 @@
 package org.apache.nifi.cdc.mysql.event;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * A utility class to provide MySQL- / binlog-specific constants and methods for processing events and data
@@ -32,10 +38,22 @@ public class MySQLCDCUtils {
                 return new String((byte[]) value);
             } else if (value instanceof Number) {
                 return value;
+            } else if (value instanceof Timestamp) {
+                return parseTimestamp2Str((Timestamp) value);
+            } else if (value instanceof Date) {
+                return parseDate2Str((Date) value);
             }
         } else if (value instanceof Number) {
             return value;
         } else {
+            if (type == Types.TIMESTAMP) {
+                if (value instanceof Timestamp) {
+                    return parseTimestamp2Str((Timestamp) value);
+                }
+                if (value instanceof Date) {
+                    return parseDate2Str((Date) value);
+                }
+            }
             if (value instanceof byte[]) {
                 return new String((byte[]) value);
             } else {
@@ -44,4 +62,21 @@ public class MySQLCDCUtils {
         }
         return null;
     }
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss",
+            Locale.ENGLISH);
+
+    private static String parseTimestamp2Str(Timestamp timestamp) {
+        return timestamp.toInstant().atZone(ZoneId.of("GMT")).toLocalDateTime().format(DATE_TIME_FORMATTER);
+    }
+
+    /**
+     * 添加对时间的解析,直接将时间转换成yyyy-MM-dd HH:mm:ss格式的字符字符串;
+     * 由于mysql-binlog-connector-java中的AbstractRowsEventDataDeserializer.fallbackToGC 已经将时间读取成GMT时区,
+     * 所以format的时候也必须指定为GMT
+     */
+    private static String parseDate2Str(Date date) {
+        return date.toInstant().atZone(ZoneId.of("GMT")).toLocalDateTime().format(DATE_TIME_FORMATTER);
+    }
+
 }

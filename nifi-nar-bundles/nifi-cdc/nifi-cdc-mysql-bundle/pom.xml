@@ -27,12 +27,13 @@
         <module>nifi-cdc-mysql-processors</module>
         <module>nifi-cdc-mysql-nar</module>
     </modules>
+
     <dependencyManagement>
         <dependencies>
           <dependency>
               <groupId>org.apache.nifi</groupId>
               <artifactId>nifi-cdc-mysql-processors</artifactId>
-              <version>1.11.5-SNAPSHOT</version>
+              <version>1.11.5-SNAPSHOT-${build_no}</version>
           </dependency>
         </dependencies>
     </dependencyManagement>

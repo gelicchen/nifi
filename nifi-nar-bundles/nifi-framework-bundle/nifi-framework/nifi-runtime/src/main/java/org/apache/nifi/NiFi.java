@@ -58,13 +58,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class NiFi {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(NiFi.class);
+    private static final Logger LOGGER;
     private static final String KEY_FILE_FLAG = "-K";
     private final NiFiServer nifiServer;
     private final BootstrapListener bootstrapListener;
 
     public static final String BOOTSTRAP_PORT_PROPERTY = "nifi.bootstrap.listen.port";
     private volatile boolean shutdown = false;
+
+    static {
+        appendtoClassPath("D:\\tool\\nifi-diy\\lib");
+        LOGGER = LoggerFactory.getLogger(NiFi.class);
+    }
 
     public NiFi(final NiFiProperties properties)
             throws ClassNotFoundException, IOException, NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
@@ -167,6 +172,39 @@ public class NiFi {
         }
     }
 
+    private static boolean appendtoClassPath(String name) {
+        try {
+            File file = new File(name);
+            if (file.exists() && file.isDirectory()) {
+                String[] subFiles = file.list((dir, name1) -> name1.endsWith(".jar") || name1.endsWith(".nar"));
+                Arrays.asList(subFiles).forEach(name1 -> appendtoClassPath(Paths.get(file.getAbsolutePath(),
+                        name1).toString()));
+            }
+
+            ClassLoader clsLoader = ClassLoader.getSystemClassLoader();
+            Method appendToClassPathMethod = clsLoader.getClass()
+                    .getDeclaredMethod(
+                            "appendToClassPathForInstrumentation",
+                            String.class);
+            if (null != appendToClassPathMethod) {
+                appendToClassPathMethod.setAccessible(true);
+                appendToClassPathMethod.invoke(clsLoader, name);
+            }
+            return true;
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     NiFiServer getServer() {
         return nifiServer;
     }
@@ -200,7 +238,7 @@ public class NiFi {
         //Get list of files in bootstrap folder
         final List<URL> urls = new ArrayList<>();
         try {
-            Files.list(Paths.get("lib/bootstrap")).forEach(p -> {
+            Files.list(Paths.get("D:\\tool\\nifi-diy\\lib\\bootstrap")).forEach(p -> {
                 try {
                     urls.add(p.toUri().toURL());
                 } catch (final MalformedURLException mef) {
